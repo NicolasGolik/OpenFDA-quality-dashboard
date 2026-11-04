@@ -10,6 +10,8 @@ Alors que l'identifiant `cfres_id` est indiqué dans la documentation comme iden
 
 Au sujet de la mise à jour des données, celles-ci se font toutes les semaines selon la documentation. La dernière mise à jour observée a eu lieu le 2026-10-31, et le jeu de données openFDA compte 59 659 entrées (test 1).
 
+Le champ `product_quantity` (nombre d'unités rappelées) n'est pas exploitable en V1 : texte libre aux formats hétérogènes, et certaines valeurs sont des totaux d'événement recopiés sur chaque produit. Les questions métier compteront donc des événements et des produits, pas des unités (test 8).
+
 ## Tests
 
 ### Test 1 : Volume et fraîcheur
@@ -95,3 +97,24 @@ Résultat :
 "total": 8
 }
 Conclusion : 8 manquants, n'est pas systématiquement indiqué.
+
+### Test 8 : La valeur quantité est-elle exploitable ?
+
+Date : 4 novembre 2026
+
+Requête : https://api.fda.gov/device/recall.json?count=product_quantity&limit=50
+
+Résultat (extrait des 50 valeurs les plus fréquentes, environ 7 700 lignes sur 59 659, soit 13 %) :
+
+| Valeur (`term`) | Lignes (`count`) | Observation |
+|---|---|---|
+| `1 unit` | 491 | format « N units » |
+| `1` | 355 | même sens, nombre seul |
+| `180,573 units total` | 184 | séparateur de milliers ; total d'événement recopié sur chaque produit |
+| `Approx. 500,000 units of all products.` | 142 | valeur approchée, total d'événement |
+| `0` | 140 | zéro unité : signification inconnue (inconnu ?) |
+| `5947 total` | 128 | total d'événement |
+| `Total of all products (Listed #1 thru 101) = 304735 units` | 98 | phrase complète, total d'événement |
+
+Conclusion :
+`product_quantity` : non exploitable en V1. Texte libre aux formats hétérogènes, et granularité incohérente : certaines valeurs sont des totaux d'événement recopiés sur chaque produit (ex. « 180,573 units total » sur 184 lignes). Les sommer surestimerait massivement les unités. Les 87 % de lignes non couvertes par cet extrait ont des formats moins fréquents, probablement encore plus variés. Champ conservé brut dans le JSONB, non normalisé.
