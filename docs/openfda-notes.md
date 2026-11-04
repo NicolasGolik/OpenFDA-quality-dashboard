@@ -2,6 +2,14 @@
 
 Journaliser les appels API et les conclusions sur les résultats obtenus
 
+## Synthèse
+
+Alors que l'identifiant Cfres est indiqué dans la documentation comme identifiant celui-ci n'est pas toujours présent (Absent sur 8 lignes) et son unicité n'est pas vérifiable via l'API. Alors que l'unicité et la présence du terme product_res_number est confirmé ce terme n'est pas défini dans le PDF fields.pdf mais est présent sur la page https://open.fda.gov/apis/device/recall/searchable-fields/.
+
+product_res_number est donc le choix conservé comme clé unique.
+
+Au sujet de la mise à jour des données celles-ci se font toute les semaine selon la documentation. La dernière mise à jour à eu lieu le 2026-10-31 et il y a un total de 59659 entrées dans la base de donnée.
+
 ## Tests
 
 ### Test 1 : Volume et fraîcheur
