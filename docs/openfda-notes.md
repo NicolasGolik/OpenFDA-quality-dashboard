@@ -4,11 +4,11 @@ Journaliser les appels API et les conclusions sur les résultats obtenus
 
 ## Synthèse
 
-Alors que l'identifiant Cfres est indiqué dans la documentation comme identifiant celui-ci n'est pas toujours présent (Absent sur 8 lignes) et son unicité n'est pas vérifiable via l'API. Alors que l'unicité et la présence du terme product_res_number est confirmé ce terme n'est pas défini dans le PDF fields.pdf mais est présent sur la page https://open.fda.gov/apis/device/recall/searchable-fields/.
+Alors que l'identifiant `cfres_id` est indiqué dans la documentation comme identifiant, celui-ci n'est pas toujours présent (absent sur 8 lignes, test 7) et son unicité n'est pas vérifiable via l'API (test 5). L'unicité et la présence de `product_res_number` sont observées via l'API (tests 3 et 4) et restent à confirmer en SQL ; l'absence de chaînes vides n'a pas pu être vérifiée (test 6). Ce champ n'est pas défini dans le PDF `fields.pdf` mais est présent sur la page https://open.fda.gov/apis/device/recall/searchable-fields/.
 
-product_res_number est donc le choix conservé comme clé unique.
+`product_res_number` est donc retenu comme clé unique : voir la [décision 0001](decisions/0001-cle-product-res-number.md).
 
-Au sujet de la mise à jour des données celles-ci se font toute les semaine selon la documentation. La dernière mise à jour à eu lieu le 2026-10-31 et il y a un total de 59659 entrées dans la base de donnée.
+Au sujet de la mise à jour des données, celles-ci se font toutes les semaines selon la documentation. La dernière mise à jour observée a eu lieu le 2026-10-31, et le jeu de données openFDA compte 59 659 entrées (test 1).
 
 ## Tests
 
@@ -72,7 +72,7 @@ https://api.fda.gov/device/recall.json?count=cfres_id.exact&limit=1 --> "message
 
 Conclusion : Impossibilité de vérifier l'unicité, nous vérifierons cela une fois les données récoltées
 
-### Test 6 : product_res_number n'est jamais égal à ""
+### Test 6 : product_res_number peut-il être une chaîne vide ?
 
 Date : 4 novembre 2026
 Requêtes :
