@@ -1,5 +1,5 @@
 # Quel est le sujet du contrat
-apiVersion: v3.2.0 # Standard version
+apiVersion: v3.2.0 # Version du Standard (ODCS)
 kind: DataContract
 id: 53581432-6c55-4ba2-a65f-72344a91553a
 name: device_recalls
@@ -16,7 +16,12 @@ description:
     pour l'analyse qualité (tendances, causes, cartes de contrôle).
 
   # Comment dois-je m'en servir correctement?
-  usage: Tendances comptées par événement (res_event_number), répartitions par produit ; voir la décision 0002.
+  usage: |
+    - Séries temporelles : placer les rappels selon event_date_initiated (date de lancement par le fabricant).
+    - Granularité : semaine ou mois, jamais jour (environ 55 à 70 rappels par semaine).
+    - Tendances et cartes de contrôle comptées par événement (res_event_number), répartitions par produit (product_res_number) ;
+      voir docs/decisions/0002-comptage-evenement-vs-produit.md.
+    - Exclure les valeurs marquées suspectes des analyses qui les concernent.
 
   # Que ne dois-je pas faire, sur quoi ne pas compter?
   limitations: |
