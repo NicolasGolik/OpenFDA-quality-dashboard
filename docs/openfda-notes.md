@@ -106,15 +106,238 @@ Requête : https://api.fda.gov/device/recall.json?count=product_quantity&limit=5
 
 Résultat (extrait des 50 valeurs les plus fréquentes, environ 7 700 lignes sur 59 659, soit 13 %) :
 
-| Valeur (`term`) | Lignes (`count`) | Observation |
-|---|---|---|
-| `1 unit` | 491 | format « N units » |
-| `1` | 355 | même sens, nombre seul |
-| `180,573 units total` | 184 | séparateur de milliers ; total d'événement recopié sur chaque produit |
-| `Approx. 500,000 units of all products.` | 142 | valeur approchée, total d'événement |
-| `0` | 140 | zéro unité : signification inconnue (inconnu ?) |
-| `5947 total` | 128 | total d'événement |
-| `Total of all products (Listed #1 thru 101) = 304735 units` | 98 | phrase complète, total d'événement |
+| Valeur (`term`)                                             | Lignes (`count`) | Observation                                                           |
+| ----------------------------------------------------------- | ---------------- | --------------------------------------------------------------------- |
+| `1 unit`                                                    | 491              | format « N units »                                                    |
+| `1`                                                         | 355              | même sens, nombre seul                                                |
+| `180,573 units total`                                       | 184              | séparateur de milliers ; total d'événement recopié sur chaque produit |
+| `Approx. 500,000 units of all products.`                    | 142              | valeur approchée, total d'événement                                   |
+| `0`                                                         | 140              | zéro unité : signification inconnue (inconnu ?)                       |
+| `5947 total`                                                | 128              | total d'événement                                                     |
+| `Total of all products (Listed #1 thru 101) = 304735 units` | 98               | phrase complète, total d'événement                                    |
 
 Conclusion :
 `product_quantity` : non exploitable en V1. Texte libre aux formats hétérogènes, et granularité incohérente : certaines valeurs sont des totaux d'événement recopiés sur chaque produit (ex. « 180,573 units total » sur 184 lignes). Les sommer surestimerait massivement les unités. Les 87 % de lignes non couvertes par cet extrait ont des formats moins fréquents, probablement encore plus variés. Champ conservé brut dans le JSONB, non normalisé.
+
+### Test 9 : Mesure de la présence de res_event_number
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:res_event_number
+Résultat : "message": "No matches found!"
+Conclusion : res_event_number toujours présent sur les données actuelles
+
+### Test 10 : Mesure de la présence de event_date_initiated
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_initiated
+Résultat : "message": "No matches found!"
+Conclusion : event_date_initiated toujours présent sur les données actuelles
+
+### Test 11: Valeurs possibles de recall_status
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?count=recall_status
+Résultat:
+"results": [
+{
+"term": "Terminated",
+"count": 44686
+},
+{
+"term": "Open, Classified",
+"count": 14531
+},
+{
+"term": "Completed",
+"count": 442
+}
+]
+Conclusion : 3 valeurs possibles : "Terminated", "Open, Classified", "Completed".
+Les 3 valeurs couvrent 100 % des lignes (44 686 + 14 531 + 442 = 59 659, total du test 1) : la liste est exhaustive à cette date.
+Aucune valeur « non classé » : openFDA ne publierait les rappels qu'une fois classés par la FDA (hypothèse non vérifiée).
+
+### Test 12 : Mesure de la présence de recall_status
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:recall_status
+Résultat : "message": "No matches found!"
+Conclusion : recall_status toujours présent sur les données actuelles
+
+### Test 13 : Combien de ligne sans event_date_terminated?
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_terminated
+Résultat :
+"results": {
+"skip": 0,
+"limit": 1,
+"total": 15020
+}
+Conclusion : 15020 sans date de clôture
+
+### Test 14 : Rappels avec recall_status="Terminated" sans event_date_terminated
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=recall_status:"Terminated"AND_missing_:event_date_terminated
+Results :
+"results": {
+"skip": 0,
+"limit": 1,
+"total": 47
+}
+Conclusion : Un rappel terminé peut ne pas avoir de date de clôture
+Taux (47/44686)=0,1%
+
+### Test 15 : Rappels avec recall_status="Completed" sans event_date_terminated
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=recall_status:"Completed"AND_missing_:event_date_terminated
+Results :
+"results": {
+"skip": 0,
+"limit": 1,
+"total": 442
+}
+Conclusion : Aucun rappel « Completed » n'a de date de clôture (comportement attendu : l'entreprise a terminé ses actions, mais la FDA n'a pas encore clôturé le rappel)
+Taux: 442/442=100%
+
+### Test 16 : Rappels avec recall_status="Open, Classified" sans event_date_terminated
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=recall_status:"Open, Classified"AND*missing*:event_date_terminated
+Results :
+"results": {
+"skip": 0,
+"limit": 1,
+"total": 14531
+}
+Conclusion : Un rappel ouvert n'a jamais de event_date_terminated (comportement attendu : le rappel n'est pas clôturé)
+Taux: 14531/14531=100%
+
+Vérification croisée (tests 13 à 16) : 47 + 442 + 14 531 = 15 020, total du test 13. La seule anomalie est celle du test 14 : 47 rappels « Terminated » sans date de clôture (0,1 %).
+
+### Test 17 : Mesure de la présence de event_date_posted
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_posted
+Résultat : "total": 13575
+Conclusion : event_date_posted n'est pas toujours présent sur les données actuelles
+
+### Test 18 : Mesure de la présence de root_cause_description
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:root_cause_description
+Résultat : "total": 13
+Conclusion : root_cause_description n'est pas toujours présente sur les données actuelles
+Taux d'absence : 13/59659=0,02%
+
+### Test 19 : Mesure de la présence de product_code
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:product_code
+Résultat : "total": 359
+Conclusion : product_code n'est pas toujours présent sur les données actuelles
+Taux d'absence : 359/59659=0,6%
+
+### Test 20 : Mesure de la présence de recalling_firm
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:recalling_firm
+Résultat : "total": 1
+Conclusion : recalling_firm n'est pas toujours présent sur les données actuelles
+Taux d'absence : 1/59659=0,0016%
+
+### Test 21 : Mesure de la présence de firm_fei_number
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:firm_fei_number
+Résultat : "total": 98
+Conclusion : firm_fei_number n'est pas toujours présent sur les données actuelles
+Taux d'absence : 98/59659=0,16%
+
+### Test 22 : Mesure de la présence de openfda.medical_specialty_description
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:openfda.medical_specialty_description
+Résultat : "total": 1287
+Conclusion : openfda.medical_specialty_description n'est pas toujours présente sur les données actuelles
+Taux d'absence : 1287/59659=2,16%
+
+### Test 23 : Mesure de la présence de openfda.device_class
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:openfda.device_class
+Résultat : "total": 1287
+Conclusion : openfda.device_class n'est pas toujours présente sur les données actuelles
+Taux d'absence : 1287/59659=2,16%
+
+Observation (tests 22 et 23) : les deux champs manquent exactement sur le même nombre de lignes (1 287). Hypothèse : c'est tout l'objet openfda qui est absent sur ces lignes (non vérifiée). Contrairement à fields.pdf, la spécialité ne semble pas manquer spécifiquement pour les dispositifs de classe 3.
+
+### Test 24: Valeurs possibles de openfda.device_class
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?count=openfda.device_class
+[
+{
+"term": "2",
+"count": 44102
+},
+{
+"term": "1",
+"count": 9876
+},
+{
+"term": "3",
+"count": 3697
+},
+{
+"term": "U",
+"count": 368
+},
+{
+"term": "N",
+"count": 306
+},
+{
+"term": "f",
+"count": 23
+}
+]
+Conclusion : 6 valeurs possibles : "1", "2", "3", "U", "N", "f".
+Les 6 valeurs couvrent 100 % des lignes renseignées (44 102 + 9 876 + 3 697 + 368 + 306 + 23 = 58 372 ; avec les 1 287 lignes sans valeur du test 23, total = 59 659, total du test 1) : la liste est exhaustive à cette date.
+« f » est en minuscule alors que fields.pdf documente « F » (HDE) ; « U » et « N » étant en majuscules, ce n'est vraisemblablement pas un effet de l'API (à confirmer avec search=openfda.device_class:"f").
+La classe 2 représente 74 % des lignes.
+
+### Test 25 : Valeurs possibles de openfda.medical_specialty_description
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?count=openfda.medical_specialty_description.exact
+Résultat (21 valeurs) :
+
+| Valeur (`term`) | Lignes (`count`) |
+|---|---|
+| `Orthopedic` | 7 851 |
+| `Cardiovascular` | 6 932 |
+| `General, Plastic Surgery` | 6 867 |
+| `Radiology` | 6 379 |
+| `General Hospital` | 6 288 |
+| `Gastroenterology, Urology` | 4 422 |
+| `Clinical Chemistry` | 3 458 |
+| `Unknown` | 3 421 |
+| `Anesthesiology` | 3 256 |
+| `Neurology` | 1 558 |
+| `Microbiology` | 1 453 |
+| `Dental` | 1 348 |
+| `Hematology` | 1 030 |
+| `Ophthalmic` | 971 |
+| `Obstetrics/Gynecology` | 810 |
+| `Physical Medicine` | 771 |
+| `Ear, Nose, Throat` | 458 |
+| `Immunology` | 447 |
+| `Clinical Toxicology` | 391 |
+| `Pathology` | 257 |
+| `Medical Genetics` | 4 |
+
+Conclusion : 21 valeurs possibles.
+Les 21 valeurs couvrent 100 % des lignes renseignées (58 372 ; avec les 1 287 lignes sans valeur du test 22, total = 59 659, total du test 1) : la liste est exhaustive à cette date. Même nombre de lignes renseignées que device_class (test 24), ce qui renforce l'hypothèse d'un objet openfda absent sur les 1 287 autres.
+« Unknown » (3 421 lignes, 5,7 %) est une absence déguisée, non détectée par _missing_ : le taux réel de spécialité inconnue est de (1 287 + 3 421) / 59 659 = 7,9 %. Choix assumé : « Unknown » est conservé comme une valeur et sera traité plus tard si nécessaire.

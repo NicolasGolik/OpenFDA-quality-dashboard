@@ -1,0 +1,244 @@
+# Quel est le sujet du contrat
+apiVersion: v3.2.0 # Version du Standard (ODCS)
+kind: DataContract
+id: 53581432-6c55-4ba2-a65f-72344a91553a
+name: device_recalls
+version: 0.1.0
+status: draft
+domain: quality
+tenant: NicolasGolik
+description:
+  # Que contient ce jeu de données et pourquoi il existe?
+  purpose: >
+    Rappels de dispositifs médicaux issus d'openFDA device/recall,
+    conservés bruts et normalisés,
+    validés selon ce contrat,
+    pour l'analyse qualité (tendances, causes, cartes de contrôle).
+
+  # Comment dois-je m'en servir correctement?
+  usage: |
+    - Séries temporelles : placer les rappels selon event_date_initiated (date de lancement par le fabricant).
+    - Granularité : semaine ou mois, jamais jour (environ 55 à 70 rappels par semaine).
+    - Tendances et cartes de contrôle comptées par événement (res_event_number), répartitions par produit (product_res_number) ;
+      voir docs/decisions/0002-comptage-evenement-vs-produit.md.
+    - Exclure les valeurs marquées suspectes des analyses qui les concernent.
+
+  # Que ne dois-je pas faire, sur quoi ne pas compter?
+  limitations: |
+    - Données non validées par openFDA (avertissement présent dans chaque réponse de l'API).
+    - product_quantity non exploité : texte libre hétérogène, totaux d'événement recopiés sur chaque produit (openfda-notes.md, test 8).
+    - event_date_initiated contient des dates aberrantes (ex. 0010-08-17), signalées par les règles de qualité.
+    - Les semaines les plus récentes peuvent être incomplètes ; le délai de publication n'est pas mesuré
+      (event_date_posted non normalisé, voir docs/decisions/0004-event-date-posted-hors-contrat.md).
+    - event_date_posted (date de classification) absente sur 13 575 lignes (23 %, openfda-notes.md, test 17), cause non établie ;
+      conservée uniquement dans raw_record.
+    - Les interprétations des valeurs de recall_status ne sont pas documentées par openFDA (voir la propriété recall_status).
+    - Fabricants identifiés par firm_fei_number (un site, pas une entreprise) : pas de nom lisible en V1.
+      Le nom (recalling_firm, texte libre) reste dans raw_record ; une table des sociétés pourra être construite plus tard.
+    - medical_specialty_description contient la valeur « Unknown » (3 421 lignes, 5,7 %, openfda-notes.md, test 25), conservée comme une spécialité :
+      avec les 1 287 lignes sans valeur, la spécialité est réellement inconnue pour 7,9 % des lignes.
+
+tags: ["quality"]
+
+schema:
+  - name: device_recalls
+    logicalType: object
+    description: >
+      Rappels de dispositifs médicaux openFDA, normalisés et validés selon ce contrat
+    dataGranularityDescription: Une ligne par produit rappelé ; un événement (res_event_number) regroupe un ou plusieurs produits.
+    properties:
+      - name: product_res_number
+        logicalType: string
+        required: true
+        unique: true
+        description: >
+          Identifiant du produit rappelé (ex. Z-0001-04). Absent de fields.pdf,
+          présent sur la page searchable-fields d'openFDA. Voir décision 0001.
+        examples: ["Z-0001-04", "Z-0911-2011"]
+
+      - name: res_event_number
+        logicalType: string
+        # Valeur toujours présente dans le jeu de données (Test #9)
+        required: true
+        unique: false
+        description: >
+          Identifiant de l'événement de rappel, attribué par la FDA (cinq chiffres).
+          Un événement regroupe un ou plusieurs produits (product_res_number).
+          Unité de comptage des tendances et cartes de contrôle (décision 0002).
+        examples: ["99939", "99889"]
+      - name: event_date_initiated
+        logicalType: date
+        # Valeur toujours présente dans le jeu de données (Test #10)
+        # À revoir avec les règles de qualité : rejet ou avertissement si absente ?
+        required: true
+        unique: false
+        description: >
+          Date à laquelle l'entreprise a commencé à notifier le rappel au public ou à ses clients.
+          Axe de temps des séries (questions métier, choix retenus).
+          Contient des valeurs aberrantes connues (ex. 0010-08-17).
+        examples: ["2026-10-12", "2003-10-27"]
+
+      - name: recall_status
+        logicalType: string
+        # Valeur toujours présente dans le jeu de données (Test #12)
+        # À revoir avec les règles de qualité : rejet ou avertissement si absente ?
+        required: true
+        unique: false
+        # Valeurs relevées dans le test #11 : les 3 valeurs couvrent 100 % des lignes (44 686 + 14 531 + 442 = 59 659)
+        # Ordre : cycle de vie du rappel
+        # Descriptions : interprétation non confirmée par openFDA, à vérifier sur le glossaire de la base de rappels de la FDA
+        # Règle de qualité à prévoir (invalidValues) : que faire si une nouvelle valeur apparaît ?
+        enum:
+          - value: "Open, Classified"
+            description: Rappel classé par la FDA, actions de rappel en cours.
+          - value: "Completed"
+            description: L'entreprise a terminé ses actions de rappel ; la FDA n'a pas encore clôturé le rappel.
+          - value: "Terminated"
+            description: La FDA a jugé les actions suffisantes et a clôturé le rappel (21 CFR 7.55, cité dans fields.pdf).
+        description: >
+          État actuel du rappel.
+          Un enregistrement est créé dans la base de rappels de la FDA lorsqu'une entreprise engage une action de correction ou de retrait.
+          Cet enregistrement est mis à jour si la FDA constate une infraction et qualifie l'action de « rappel » ; il fait l'objet d'une ultime mise à jour lorsque le rappel est clôturé.
+          Aucune valeur « non classé » n'apparaît dans les données (test 11), mais 23 % des lignes n'ont pas de date de classification
+          (event_date_posted, test 17) : le lien entre statut et classification n'est pas établi.
+
+      - name: event_date_terminated
+        logicalType: date
+        # Absente pour 15 020 lignes (test #13), dont 14 531 « Open, Classified » et 442 « Completed » : normal, rappel non clôturé (tests #15, #16)
+        # Anomalie : 47 rappels « Terminated » sans date de clôture (test #14) -> quarantaine (décision 0003)
+        # required ne peut pas exprimer « obligatoire si recall_status = Terminated » : règle conditionnelle à écrire dans quality
+        # Règle liée à écrire dans quality : event_date_terminated >= event_date_initiated
+        required: false
+        unique: false
+        description: >
+          Date à laquelle la FDA a jugé les actions de rappel terminées et a clôturé le rappel (21 CFR 7.55, cité dans fields.pdf).
+          Présente uniquement pour les rappels au statut « Terminated ».
+          Utilisée pour le délai de clôture (question métier Q3, docs/questions-metier.md).
+          Rappels « Terminated » sans date de clôture : mis en quarantaine (docs/decisions/0003-rappels-termines-sans-date-de-cloture.md).
+
+        examples: ["2011-07-21", "2013-11-04"]
+
+      - name: root_cause_description
+        logicalType: string
+        # Absente sur 13 lignes, 0,02 % (test #18) : avertissement, lignes gardées mais exclues des analyses par cause
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
+        required: false
+        unique: false
+        description: >
+          Type général de cause du rappel, déterminé par la FDA.
+          Peut être modifié jusqu'à la clôture du rappel (ex. « Under Investigation by firm »).
+          Valeur la plus fréquente : « Other » (8 928 lignes, openfda-notes.md, test 2).
+          Utilisé pour les répartitions par cause (Q2), comptées par produit (décision 0002).
+        examples: ["Other", "Device Design"]
+
+      - name: product_code
+        logicalType: string
+        # Absent sur 359 lignes, 0,6 % (test #19) : avertissement, lignes gardées mais exclues des analyses par type de dispositif
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
+        required: false
+        unique: false
+        description: >
+          Code de trois lettres désignant une catégorie de dispositifs (classification 21 CFR 862-892).
+          La FDA peut modifier ces codes au fil du temps.
+          Utilisé pour les répartitions par type de dispositif (Q5).
+        examples: ["NAY", "MUJ"]
+
+      - name: firm_fei_number
+        logicalType: string
+        # Absent sur 98 lignes, 0,16 % (test #21) : avertissement, lignes gardées mais exclues des analyses par fabricant
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
+        # Remplace recalling_firm (texte libre, variantes d'orthographe) : recalling_firm reste dans raw_record (décision 0005)
+        required: false
+        unique: false
+        description: >
+          Identifiant d'établissement (FEI) attribué par la FDA à l'entreprise qui rappelle (selon fields.pdf).
+          Désigne un site, pas une entreprise : une entreprise à plusieurs sites peut avoir plusieurs FEI.
+          Clé de regroupement des répartitions par fabricant (Q5), comptées par site.
+          À ne pas confondre avec openfda.fei_number (tableau des FEI associés au dispositif).
+          Chaîne et non nombre : identifiant, aucun calcul dessus.
+        examples: ["3001675293", "2916710"]
+
+      - name: medical_specialty_description
+        logicalType: string
+        # Absente sur 1 287 lignes, 2,16 % (test #22) : avertissement, lignes gardées mais exclues des analyses par domaine
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
+        required: false
+        unique: false
+        description: >
+          Spécialité médicale déduite de la réglementation (ex. 21 CFR Part 888 : dispositifs orthopédiques).
+          Issu de l'objet imbriqué openfda (openfda.medical_specialty_description).
+          fields.pdf indique qu'elle manque pour les dispositifs de classe 3, mais ce n'est pas observé :
+          elle manque exactement sur autant de lignes que device_class (1 287, tests 22 et 23),
+          ce qui suggère l'absence de tout l'objet openfda sur ces lignes (hypothèse non vérifiée).
+          Utilisé pour les répartitions par domaine (Q5).
+        # Valeurs relevées dans le test #25 : les 21 valeurs couvrent 100 % des lignes renseignées
+        # (58 372 lignes + 1 287 sans valeur, test #22 = 59 659)
+        # « Unknown » est une absence déguisée (3 421 lignes, 5,7 %) : choix assumé de la conserver comme valeur, à traiter plus tard si nécessaire
+        # Règle de qualité à prévoir (invalidValues) : une nouvelle valeur doit être signalée
+        enum:
+          - value: "Orthopedic"
+          - value: "Cardiovascular"
+          - value: "General, Plastic Surgery"
+          - value: "Radiology"
+          - value: "General Hospital"
+          - value: "Gastroenterology, Urology"
+          - value: "Clinical Chemistry"
+          - value: "Unknown"
+            description: Spécialité inconnue (absence déguisée, non détectée par _missing_). Conservée comme valeur (choix assumé, test 25).
+          - value: "Anesthesiology"
+          - value: "Neurology"
+          - value: "Microbiology"
+          - value: "Dental"
+          - value: "Hematology"
+          - value: "Ophthalmic"
+          - value: "Obstetrics/Gynecology"
+          - value: "Physical Medicine"
+          - value: "Ear, Nose, Throat"
+          - value: "Immunology"
+          - value: "Clinical Toxicology"
+          - value: "Pathology"
+          - value: "Medical Genetics"
+        examples: ["Orthopedic", "Cardiovascular"]
+
+      - name: device_class
+        logicalType: string
+        # Absente sur 1 287 lignes, 2,16 % (test #23) : avertissement, lignes gardées mais exclues des analyses par classe de dispositif
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
+        required: false
+        unique: false
+        description: >
+          Classe de risque du dispositif (et non du rappel) : 1, 2, 3, U (Unclassified), N (Not classified), f (HDE).
+          Issu de l'objet imbriqué openfda (openfda.device_class).
+          Chaîne et non nombre : les valeurs U, N et f ne sont pas numériques.
+          La classe du rappel (Class I, II, III) se trouve dans un autre endpoint (device/enforcement), hors périmètre V1.
+        # Valeurs relevées dans le test #24 : les 6 valeurs couvrent 100 % des lignes renseignées
+        # (58 372 lignes + 1 287 sans valeur, test #23 = 59 659)
+        # « f » en minuscule, documenté « F » dans fields.pdf : valeur brute conservée, « F » volontairement absent de l'enum
+        # Règle de qualité à prévoir (invalidValues) : une nouvelle valeur (dont « F ») doit être signalée
+        enum:
+          - value: "1"
+            description: Classe I, risque faible à modéré (contrôles généraux).
+          - value: "2"
+            description: Classe II, risque modéré à élevé (contrôles généraux et spéciaux).
+          - value: "3"
+            description: Classe III, risque élevé (contrôles généraux et autorisation de mise sur le marché, PMA).
+          - value: "U"
+            description: Non classé (Unclassified).
+          - value: "N"
+            description: Pas de classification (Not classified).
+          - value: "f"
+            description: HDE (Humanitarian Device Exemption). Documenté « F » dans fields.pdf, observé en minuscule (test 24).
+        examples: ["2", "3"]
+
+      - name: raw_record
+        logicalType: object
+        # Rempli par le worker pour chaque ligne : toujours présent par construction
+        required: true
+        unique: false
+        description: >
+          Enregistrement complet renvoyé par l'API openFDA pour ce produit, conservé tel quel, sans correction.
+          Principe : garder la valeur brute, ne jamais corriger silencieusement.
+          Source des champs non normalisés en colonnes, notamment cfres_id (recoupements, décision 0001),
+          event_date_posted (décision 0004), recalling_firm (nom du fabricant, remplacé par firm_fei_number),
+          product_quantity (non exploité, openfda-notes.md, test 8) et code_info.
+          Permet de normaliser un nouveau champ plus tard sans réinterroger l'API.
