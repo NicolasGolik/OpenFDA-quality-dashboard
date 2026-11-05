@@ -230,3 +230,11 @@ Requête : https://api.fda.gov/device/recall.json?search=_missing_:root_cause_de
 Résultat : "total": 13
 Conclusion : root_cause_description n'est pas toujours présente sur les données actuelles
 Taux d'absence : 13/59659=0,02%
+
+### Test 19 : Mesure de la présence de product_code
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:product_code
+Résultat : "total": 359
+Conclusion : product_code n'est pas toujours présent sur les données actuelles
+Taux d'absence : 359/59659=0,6%

@@ -129,7 +129,8 @@ schema:
 
       - name: product_code
         logicalType: string
-        # À mesurer : _missing_:product_code
+        # Absent sur 359 lignes, 0,6 % (test #19) : avertissement, lignes gardées mais exclues des analyses par type de dispositif
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
         required: false
         unique: false
         description: >
