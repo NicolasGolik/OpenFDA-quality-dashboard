@@ -33,6 +33,8 @@ description:
     - event_date_posted (date de classification) absente sur 13 575 lignes (23 %, openfda-notes.md, test 17), cause non établie ;
       conservée uniquement dans raw_record.
     - Les interprétations des valeurs de recall_status ne sont pas documentées par openFDA (voir la propriété recall_status).
+    - Fabricants identifiés par firm_fei_number (un site, pas une entreprise) : pas de nom lisible en V1.
+      Le nom (recalling_firm, texte libre) reste dans raw_record ; une table des sociétés pourra être construite plus tard.
 
 tags: ["quality"]
 
@@ -137,20 +139,22 @@ schema:
           Code de trois lettres désignant une catégorie de dispositifs (classification 21 CFR 862-892).
           La FDA peut modifier ces codes au fil du temps.
           Utilisé pour les répartitions par type de dispositif (Q5).
-        # À compléter : deux valeurs observées dans une réponse de l'API
-        examples: []
+        examples: ["NAY", "MUJ"]
 
-      - name: recalling_firm
+      - name: firm_fei_number
         logicalType: string
-        # À mesurer : _missing_:recalling_firm
+        # Absent sur 98 lignes, 0,16 % (test #21) : avertissement, lignes gardées mais exclues des analyses par fabricant
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
+        # Remplace recalling_firm (texte libre, variantes d'orthographe) : recalling_firm reste dans raw_record (décision 0005)
         required: false
         unique: false
         description: >
-          Entreprise à l'origine du rappel, ou responsable de la fabrication ou de la commercialisation du produit.
-          Texte libre : un même fabricant peut apparaître sous plusieurs orthographes, et le champ peut contenir l'adresse complète.
-          Utilisé pour les répartitions par fabricant (Q5), sans regroupement des variantes en V1.
-        # À compléter : deux valeurs observées dans une réponse de l'API
-        examples: []
+          Identifiant d'établissement (FEI) attribué par la FDA à l'entreprise qui rappelle (selon fields.pdf).
+          Désigne un site, pas une entreprise : une entreprise à plusieurs sites peut avoir plusieurs FEI.
+          Clé de regroupement des répartitions par fabricant (Q5), comptées par site.
+          À ne pas confondre avec openfda.fei_number (tableau des FEI associés au dispositif).
+          Chaîne et non nombre : identifiant, aucun calcul dessus.
+        examples: ["3001675293", "2916710"]
 
       - name: medical_specialty_description
         logicalType: string
@@ -187,5 +191,6 @@ schema:
           Enregistrement complet renvoyé par l'API openFDA pour ce produit, conservé tel quel, sans correction.
           Principe : garder la valeur brute, ne jamais corriger silencieusement.
           Source des champs non normalisés en colonnes, notamment cfres_id (recoupements, décision 0001),
-          event_date_posted (décision 0004), product_quantity (non exploité, openfda-notes.md, test 8) et code_info.
+          event_date_posted (décision 0004), recalling_firm (nom du fabricant, remplacé par firm_fei_number),
+          product_quantity (non exploité, openfda-notes.md, test 8) et code_info.
           Permet de normaliser un nouveau champ plus tard sans réinterroger l'API.

@@ -43,10 +43,10 @@ Unité de comptage : par défaut, une ligne de `device/recall` correspond à **u
 ## Q5 : Quels domaines et quels fabricants sont les plus concernés ?
 
 - Pourquoi : situer son propre domaine par rapport au reste du secteur.
-- Indicateur : nombre de produits rappelés par spécialité médicale, par type de dispositif, par fabricant.
+- Indicateur : nombre de produits rappelés par spécialité médicale, par type de dispositif, par fabricant (site identifié par son FEI).
 - Granularité : année.
-- Champs nécessaires : `openfda.medical_specialty_description`, `product_code`, `openfda.device_class`, `recalling_firm`.
-- Faisabilité : à mesurer. Points d'attention : la documentation indique que la spécialité manque pour les dispositifs de classe 3 ; un même fabricant peut apparaître sous plusieurs orthographes.
+- Champs nécessaires : `openfda.medical_specialty_description`, `product_code`, `openfda.device_class`, `firm_fei_number`.
+- Faisabilité : à mesurer. Points d'attention : la documentation indique que la spécialité manque pour les dispositifs de classe 3 ; `firm_fei_number` désigne un site et non une entreprise, et le nom lisible du fabricant (`recalling_firm`, texte libre aux orthographes variables) n'est pas exploité en V1.
 - Version : V1.
 
 ## Q6 : Quelle part des données est exploitable ?

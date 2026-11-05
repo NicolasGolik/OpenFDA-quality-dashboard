@@ -238,3 +238,19 @@ Requête : https://api.fda.gov/device/recall.json?search=_missing_:product_code
 Résultat : "total": 359
 Conclusion : product_code n'est pas toujours présent sur les données actuelles
 Taux d'absence : 359/59659=0,6%
+
+### Test 20 : Mesure de la présence de recalling_firm
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:recalling_firm
+Résultat : "total": 1
+Conclusion : recalling_firm n'est pas toujours présent sur les données actuelles
+Taux d'absence : 1/59659=0,0016%
+
+### Test 21 : Mesure de la présence de firm_fei_number
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:firm_fei_number
+Résultat : "total": 98
+Conclusion : firm_fei_number n'est pas toujours présent sur les données actuelles
+Taux d'absence : 98/59659=0,16%
