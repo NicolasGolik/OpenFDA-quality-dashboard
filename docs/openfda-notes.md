@@ -215,3 +215,17 @@ Conclusion : Un rappel ouvert n'a jamais de event_date_terminated (comportement 
 Taux: 14531/14531=100%
 
 Vérification croisée (tests 13 à 16) : 47 + 442 + 14 531 = 15 020, total du test 13. La seule anomalie est celle du test 14 : 47 rappels « Terminated » sans date de clôture (0,1 %).
+
+### Test 17 : Mesure de la présence de event_date_posted
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_posted
+Résultat : "total": 13575
+Conclusion : event_date_posted n'est pas toujours présent sur les données actuelles
+
+### Test 18 : recall_st
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_posted
+Résultat : "total": 13575
+Conclusion : event_date_posted n'est pas toujours présent sur les données actuelles

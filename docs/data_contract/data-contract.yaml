@@ -28,8 +28,10 @@ description:
     - Données non validées par openFDA (avertissement présent dans chaque réponse de l'API).
     - product_quantity non exploité : texte libre hétérogène, totaux d'événement recopiés sur chaque produit (openfda-notes.md, test 8).
     - event_date_initiated contient des dates aberrantes (ex. 0010-08-17), signalées par les règles de qualité.
-    - Les semaines les plus récentes peuvent être incomplètes : openFDA ne semble publier les rappels qu'une fois classés par la FDA
-      (aucun statut « non classé » observé, openfda-notes.md, test 11 ; hypothèse non vérifiée).
+    - Les semaines les plus récentes peuvent être incomplètes ; le délai de publication n'est pas mesuré
+      (event_date_posted non normalisé, voir docs/decisions/0004-event-date-posted-hors-contrat.md).
+    - event_date_posted (date de classification) absente sur 13 575 lignes (23 %, openfda-notes.md, test 17), cause non établie ;
+      conservée uniquement dans raw_record.
     - Les interprétations des valeurs de recall_status ne sont pas documentées par openFDA (voir la propriété recall_status).
 
 tags: ["quality"]
@@ -72,21 +74,6 @@ schema:
           Contient des valeurs aberrantes connues (ex. 0010-08-17).
         examples: ["2026-10-12", "2003-10-27"]
 
-      - name: event_date_posted
-        logicalType: date
-        # À mesurer : _missing_:event_date_posted
-        required: false
-        unique: false
-        description: >
-          Date à laquelle la FDA a classé le rappel ; n'indique pas nécessairement un nouveau rappel (selon fields.pdf).
-          N'est pas l'axe de temps des séries (voir event_date_initiated).
-          Conservée pour deux usages :
-          mesurer le délai de publication (event_date_initiated -> event_date_posted), donc le nombre de semaines récentes incomplètes ;
-          contrôler la cohérence des dates (event_date_initiated <= event_date_posted, règle à écrire dans quality),
-          qui révèle par exemple Z-0911-2011 (début 0010-08-17, classification 2011-01-18).
-        # À compléter : deux valeurs observées dans une réponse de l'API
-        examples: []
-
       - name: recall_status
         logicalType: string
         # Valeur toujours présente dans le jeu de données (Test #12)
@@ -108,7 +95,8 @@ schema:
           État actuel du rappel.
           Un enregistrement est créé dans la base de rappels de la FDA lorsqu'une entreprise engage une action de correction ou de retrait.
           Cet enregistrement est mis à jour si la FDA constate une infraction et qualifie l'action de « rappel » ; il fait l'objet d'une ultime mise à jour lorsque le rappel est clôturé.
-          Aucune valeur « non classé » n'apparaît dans les données : openFDA ne publierait les rappels qu'une fois classés (hypothèse non vérifiée).
+          Aucune valeur « non classé » n'apparaît dans les données (test 11), mais 23 % des lignes n'ont pas de date de classification
+          (event_date_posted, test 17) : le lien entre statut et classification n'est pas établi.
 
       - name: event_date_terminated
         logicalType: date
@@ -197,5 +185,5 @@ schema:
           Enregistrement complet renvoyé par l'API openFDA pour ce produit, conservé tel quel, sans correction.
           Principe : garder la valeur brute, ne jamais corriger silencieusement.
           Source des champs non normalisés en colonnes, notamment cfres_id (recoupements, décision 0001),
-          product_quantity (non exploité, openfda-notes.md, test 8) et code_info.
+          event_date_posted (décision 0004), product_quantity (non exploité, openfda-notes.md, test 8) et code_info.
           Permet de normaliser un nouveau champ plus tard sans réinterroger l'API.
