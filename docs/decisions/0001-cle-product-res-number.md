@@ -30,7 +30,7 @@ Deux champs candidats ont été testés (voir [openfda-notes.md](../openfda-note
 
 - Contrat de données : `product_res_number` absent ou vide (`''`) → **rejet** de la ligne, avec mise en quarantaine et la raison.
 - Base : contrainte d'unicité sur `product_res_number`, qui sert de cible au `ON CONFLICT`.
-- `cfres_id` reste stocké (colonne ou JSONB brut) pour les recoupements.
+- `cfres_id` n'est pas normalisé en colonne : il reste disponible dans l'enregistrement brut (`raw_record`, contrat de données) pour les recoupements.
 - Le choix de la clé primaire (clé métier seule ou clé technique en plus) sera traité dans une décision dédiée lors de la conception du schéma (issue n° à compléter).
 
 **Risques et parades :**

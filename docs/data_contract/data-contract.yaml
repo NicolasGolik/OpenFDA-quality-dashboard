@@ -72,6 +72,21 @@ schema:
           Contient des valeurs aberrantes connues (ex. 0010-08-17).
         examples: ["2026-10-12", "2003-10-27"]
 
+      - name: event_date_posted
+        logicalType: date
+        # À mesurer : _missing_:event_date_posted
+        required: false
+        unique: false
+        description: >
+          Date à laquelle la FDA a classé le rappel ; n'indique pas nécessairement un nouveau rappel (selon fields.pdf).
+          N'est pas l'axe de temps des séries (voir event_date_initiated).
+          Conservée pour deux usages :
+          mesurer le délai de publication (event_date_initiated -> event_date_posted), donc le nombre de semaines récentes incomplètes ;
+          contrôler la cohérence des dates (event_date_initiated <= event_date_posted, règle à écrire dans quality),
+          qui révèle par exemple Z-0911-2011 (début 0010-08-17, classification 2011-01-18).
+        # À compléter : deux valeurs observées dans une réponse de l'API
+        examples: []
+
       - name: recall_status
         logicalType: string
         # Valeur toujours présente dans le jeu de données (Test #12)
@@ -172,3 +187,15 @@ schema:
           La classe du rappel (Class I, II, III) se trouve dans un autre endpoint (device/enforcement), hors périmètre V1.
         # Valeurs documentées dans fields.pdf ; à confirmer par mesure (count=openfda.device_class) avant d'en faire un enum
         examples: ["2", "3"]
+
+      - name: raw_record
+        logicalType: object
+        # Rempli par le worker pour chaque ligne : toujours présent par construction
+        required: true
+        unique: false
+        description: >
+          Enregistrement complet renvoyé par l'API openFDA pour ce produit, conservé tel quel, sans correction.
+          Principe : garder la valeur brute, ne jamais corriger silencieusement.
+          Source des champs non normalisés en colonnes, notamment cfres_id (recoupements, décision 0001),
+          product_quantity (non exploité, openfda-notes.md, test 8) et code_info.
+          Permet de normaliser un nouveau champ plus tard sans réinterroger l'API.
