@@ -307,3 +307,37 @@ Conclusion : 6 valeurs possibles : "1", "2", "3", "U", "N", "f".
 Les 6 valeurs couvrent 100 % des lignes renseignées (44 102 + 9 876 + 3 697 + 368 + 306 + 23 = 58 372 ; avec les 1 287 lignes sans valeur du test 23, total = 59 659, total du test 1) : la liste est exhaustive à cette date.
 « f » est en minuscule alors que fields.pdf documente « F » (HDE) ; « U » et « N » étant en majuscules, ce n'est vraisemblablement pas un effet de l'API (à confirmer avec search=openfda.device_class:"f").
 La classe 2 représente 74 % des lignes.
+
+### Test 25 : Valeurs possibles de openfda.medical_specialty_description
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?count=openfda.medical_specialty_description.exact
+Résultat (21 valeurs) :
+
+| Valeur (`term`) | Lignes (`count`) |
+|---|---|
+| `Orthopedic` | 7 851 |
+| `Cardiovascular` | 6 932 |
+| `General, Plastic Surgery` | 6 867 |
+| `Radiology` | 6 379 |
+| `General Hospital` | 6 288 |
+| `Gastroenterology, Urology` | 4 422 |
+| `Clinical Chemistry` | 3 458 |
+| `Unknown` | 3 421 |
+| `Anesthesiology` | 3 256 |
+| `Neurology` | 1 558 |
+| `Microbiology` | 1 453 |
+| `Dental` | 1 348 |
+| `Hematology` | 1 030 |
+| `Ophthalmic` | 971 |
+| `Obstetrics/Gynecology` | 810 |
+| `Physical Medicine` | 771 |
+| `Ear, Nose, Throat` | 458 |
+| `Immunology` | 447 |
+| `Clinical Toxicology` | 391 |
+| `Pathology` | 257 |
+| `Medical Genetics` | 4 |
+
+Conclusion : 21 valeurs possibles.
+Les 21 valeurs couvrent 100 % des lignes renseignées (58 372 ; avec les 1 287 lignes sans valeur du test 22, total = 59 659, total du test 1) : la liste est exhaustive à cette date. Même nombre de lignes renseignées que device_class (test 24), ce qui renforce l'hypothèse d'un objet openfda absent sur les 1 287 autres.
+« Unknown » (3 421 lignes, 5,7 %) est une absence déguisée, non détectée par _missing_ : le taux réel de spécialité inconnue est de (1 287 + 3 421) / 59 659 = 7,9 %. Choix assumé : « Unknown » est conservé comme une valeur et sera traité plus tard si nécessaire.

@@ -35,6 +35,8 @@ description:
     - Les interprétations des valeurs de recall_status ne sont pas documentées par openFDA (voir la propriété recall_status).
     - Fabricants identifiés par firm_fei_number (un site, pas une entreprise) : pas de nom lisible en V1.
       Le nom (recalling_firm, texte libre) reste dans raw_record ; une table des sociétés pourra être construite plus tard.
+    - medical_specialty_description contient la valeur « Unknown » (3 421 lignes, 5,7 %, openfda-notes.md, test 25), conservée comme une spécialité :
+      avec les 1 287 lignes sans valeur, la spécialité est réellement inconnue pour 7,9 % des lignes.
 
 tags: ["quality"]
 
@@ -169,8 +171,34 @@ schema:
           elle manque exactement sur autant de lignes que device_class (1 287, tests 22 et 23),
           ce qui suggère l'absence de tout l'objet openfda sur ces lignes (hypothèse non vérifiée).
           Utilisé pour les répartitions par domaine (Q5).
-        # À compléter : deux valeurs observées dans une réponse de l'API
-        examples: []
+        # Valeurs relevées dans le test #25 : les 21 valeurs couvrent 100 % des lignes renseignées
+        # (58 372 lignes + 1 287 sans valeur, test #22 = 59 659)
+        # « Unknown » est une absence déguisée (3 421 lignes, 5,7 %) : choix assumé de la conserver comme valeur, à traiter plus tard si nécessaire
+        # Règle de qualité à prévoir (invalidValues) : une nouvelle valeur doit être signalée
+        enum:
+          - value: "Orthopedic"
+          - value: "Cardiovascular"
+          - value: "General, Plastic Surgery"
+          - value: "Radiology"
+          - value: "General Hospital"
+          - value: "Gastroenterology, Urology"
+          - value: "Clinical Chemistry"
+          - value: "Unknown"
+            description: Spécialité inconnue (absence déguisée, non détectée par _missing_). Conservée comme valeur (choix assumé, test 25).
+          - value: "Anesthesiology"
+          - value: "Neurology"
+          - value: "Microbiology"
+          - value: "Dental"
+          - value: "Hematology"
+          - value: "Ophthalmic"
+          - value: "Obstetrics/Gynecology"
+          - value: "Physical Medicine"
+          - value: "Ear, Nose, Throat"
+          - value: "Immunology"
+          - value: "Clinical Toxicology"
+          - value: "Pathology"
+          - value: "Medical Genetics"
+        examples: ["Orthopedic", "Cardiovascular"]
 
       - name: device_class
         logicalType: string
