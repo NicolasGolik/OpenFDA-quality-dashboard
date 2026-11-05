@@ -116,7 +116,8 @@ schema:
 
       - name: root_cause_description
         logicalType: string
-        # À mesurer : _missing_:root_cause_description
+        # Absente sur 13 lignes, 0,02 % (test #18) : avertissement, lignes gardées mais exclues des analyses par cause
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
         required: false
         unique: false
         description: >

@@ -223,9 +223,10 @@ Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_po
 Résultat : "total": 13575
 Conclusion : event_date_posted n'est pas toujours présent sur les données actuelles
 
-### Test 18 : recall_st
+### Test 18 : Mesure de la présence de root_cause_description
 
 Date : 5 novembre 2026
-Requête : https://api.fda.gov/device/recall.json?search=_missing_:event_date_posted
-Résultat : "total": 13575
-Conclusion : event_date_posted n'est pas toujours présent sur les données actuelles
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:root_cause_description
+Résultat : "total": 13
+Conclusion : root_cause_description n'est pas toujours présente sur les données actuelles
+Taux d'absence : 13/59659=0,02%
