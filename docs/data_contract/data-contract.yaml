@@ -10,9 +10,9 @@ tenant: NicolasGolik
 description:
   # Que contient ce jeu de données et pourquoi il existe?
   purpose: >
-    Rappels de dispositifs médicaux issus d'openFDA device/recall, 
-    conservés bruts et normalisés, 
-    validés selon ce contrat, 
+    Rappels de dispositifs médicaux issus d'openFDA device/recall,
+    conservés bruts et normalisés,
+    validés selon ce contrat,
     pour l'analyse qualité (tendances, causes, cartes de contrôle).
 
   # Comment dois-je m'en servir correctement?
@@ -28,6 +28,134 @@ description:
     - Données non validées par openFDA (avertissement présent dans chaque réponse de l'API).
     - product_quantity non exploité : texte libre hétérogène, totaux d'événement recopiés sur chaque produit (openfda-notes.md, test 8).
     - event_date_initiated contient des dates aberrantes (ex. 0010-08-17), signalées par les règles de qualité.
-    - Les semaines les plus récentes peuvent être incomplètes.
+    - Les semaines les plus récentes peuvent être incomplètes : openFDA ne semble publier les rappels qu'une fois classés par la FDA
+      (aucun statut « non classé » observé, openfda-notes.md, test 11 ; hypothèse non vérifiée).
+    - Les interprétations des valeurs de recall_status ne sont pas documentées par openFDA (voir la propriété recall_status).
 
 tags: ["quality"]
+
+schema:
+  - name: device_recalls
+    logicalType: object
+    description: >
+      Rappels de dispositifs médicaux openFDA, normalisés et validés selon ce contrat
+    dataGranularityDescription: Une ligne par produit rappelé ; un événement (res_event_number) regroupe un ou plusieurs produits.
+    properties:
+      - name: product_res_number
+        logicalType: string
+        required: true
+        unique: true
+        description: >
+          Identifiant du produit rappelé (ex. Z-0001-04). Absent de fields.pdf,
+          présent sur la page searchable-fields d'openFDA. Voir décision 0001.
+        examples: ["Z-0001-04", "Z-0911-2011"]
+
+      - name: res_event_number
+        logicalType: string
+        # Valeur toujours présente dans le jeu de données (Test #9)
+        required: true
+        unique: false
+        description: >
+          Identifiant de l'événement de rappel, attribué par la FDA (cinq chiffres).
+          Un événement regroupe un ou plusieurs produits (product_res_number).
+          Unité de comptage des tendances et cartes de contrôle (décision 0002).
+        examples: ["99939", "99889"]
+      - name: event_date_initiated
+        logicalType: date
+        # Valeur toujours présente dans le jeu de données (Test #10)
+        # À revoir avec les règles de qualité : rejet ou avertissement si absente ?
+        required: true
+        unique: false
+        description: >
+          Date à laquelle l'entreprise a commencé à notifier le rappel au public ou à ses clients.
+          Axe de temps des séries (questions métier, choix retenus).
+          Contient des valeurs aberrantes connues (ex. 0010-08-17).
+        examples: ["2026-10-12", "2003-10-27"]
+
+      - name: recall_status
+        logicalType: string
+        # Valeur toujours présente dans le jeu de données (Test #12)
+        # À revoir avec les règles de qualité : rejet ou avertissement si absente ?
+        required: true
+        unique: false
+        # Valeurs relevées dans le test #11 : les 3 valeurs couvrent 100 % des lignes (44 686 + 14 531 + 442 = 59 659)
+        # Ordre : cycle de vie du rappel
+        # Descriptions : interprétation non confirmée par openFDA, à vérifier sur le glossaire de la base de rappels de la FDA
+        # Règle de qualité à prévoir (invalidValues) : que faire si une nouvelle valeur apparaît ?
+        enum:
+          - value: "Open, Classified"
+            description: Rappel classé par la FDA, actions de rappel en cours.
+          - value: "Completed"
+            description: L'entreprise a terminé ses actions de rappel ; la FDA n'a pas encore clôturé le rappel.
+          - value: "Terminated"
+            description: La FDA a jugé les actions suffisantes et a clôturé le rappel (21 CFR 7.55, cité dans fields.pdf).
+        description: >
+          État actuel du rappel.
+          Un enregistrement est créé dans la base de rappels de la FDA lorsqu'une entreprise engage une action de correction ou de retrait.
+          Cet enregistrement est mis à jour si la FDA constate une infraction et qualifie l'action de « rappel » ; il fait l'objet d'une ultime mise à jour lorsque le rappel est clôturé.
+          Aucune valeur « non classé » n'apparaît dans les données : openFDA ne publierait les rappels qu'une fois classés (hypothèse non vérifiée).
+
+      - name: event_date_terminated
+        logicalType: date
+
+      - name: root_cause_description
+        logicalType: string
+        # À mesurer : _missing_:root_cause_description
+        required: false
+        unique: false
+        description: >
+          Type général de cause du rappel, déterminé par la FDA.
+          Peut être modifié jusqu'à la clôture du rappel (ex. « Under Investigation by firm »).
+          Valeur la plus fréquente : « Other » (8 928 lignes, openfda-notes.md, test 2).
+          Utilisé pour les répartitions par cause (Q2), comptées par produit (décision 0002).
+        examples: ["Other", "Device Design"]
+
+      - name: product_code
+        logicalType: string
+        # À mesurer : _missing_:product_code
+        required: false
+        unique: false
+        description: >
+          Code de trois lettres désignant une catégorie de dispositifs (classification 21 CFR 862-892).
+          La FDA peut modifier ces codes au fil du temps.
+          Utilisé pour les répartitions par type de dispositif (Q5).
+        # À compléter : deux valeurs observées dans une réponse de l'API
+        examples: []
+
+      - name: recalling_firm
+        logicalType: string
+        # À mesurer : _missing_:recalling_firm
+        required: false
+        unique: false
+        description: >
+          Entreprise à l'origine du rappel, ou responsable de la fabrication ou de la commercialisation du produit.
+          Texte libre : un même fabricant peut apparaître sous plusieurs orthographes, et le champ peut contenir l'adresse complète.
+          Utilisé pour les répartitions par fabricant (Q5), sans regroupement des variantes en V1.
+        # À compléter : deux valeurs observées dans une réponse de l'API
+        examples: []
+
+      - name: medical_specialty_description
+        logicalType: string
+        # À mesurer : _missing_:openfda.medical_specialty_description
+        required: false
+        unique: false
+        description: >
+          Spécialité médicale déduite de la réglementation (ex. 21 CFR Part 888 : dispositifs orthopédiques).
+          Issu de l'objet imbriqué openfda (openfda.medical_specialty_description).
+          Absent par construction pour les dispositifs de classe 3 (selon fields.pdf).
+          Utilisé pour les répartitions par domaine (Q5).
+        # À compléter : deux valeurs observées dans une réponse de l'API
+        examples: []
+
+      - name: device_class
+        logicalType: string
+        # À mesurer : _missing_:openfda.device_class
+        required: false
+        unique: false
+        description: >
+          Classe de risque du dispositif (et non du rappel) : 1, 2, 3, U (Unclassified), N (Not classified), F (HDE).
+          Issu de l'objet imbriqué openfda (openfda.device_class).
+          Chaîne et non nombre : les valeurs U, N et F ne sont pas numériques.
+          La classe du rappel (Class I, II, III) se trouve dans un autre endpoint (device/enforcement), hors périmètre V1.
+        # Valeurs documentées dans fields.pdf ; à confirmer par mesure (count=openfda.device_class) avant d'en faire un enum
+        examples: ["2", "3"]
