@@ -272,3 +272,38 @@ Conclusion : openfda.device_class n'est pas toujours présente sur les données 
 Taux d'absence : 1287/59659=2,16%
 
 Observation (tests 22 et 23) : les deux champs manquent exactement sur le même nombre de lignes (1 287). Hypothèse : c'est tout l'objet openfda qui est absent sur ces lignes (non vérifiée). Contrairement à fields.pdf, la spécialité ne semble pas manquer spécifiquement pour les dispositifs de classe 3.
+
+### Test 24: Valeurs possibles de openfda.device_class
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?count=openfda.device_class
+[
+{
+"term": "2",
+"count": 44102
+},
+{
+"term": "1",
+"count": 9876
+},
+{
+"term": "3",
+"count": 3697
+},
+{
+"term": "U",
+"count": 368
+},
+{
+"term": "N",
+"count": 306
+},
+{
+"term": "f",
+"count": 23
+}
+]
+Conclusion : 6 valeurs possibles : "1", "2", "3", "U", "N", "f".
+Les 6 valeurs couvrent 100 % des lignes renseignées (44 102 + 9 876 + 3 697 + 368 + 306 + 23 = 58 372 ; avec les 1 287 lignes sans valeur du test 23, total = 59 659, total du test 1) : la liste est exhaustive à cette date.
+« f » est en minuscule alors que fields.pdf documente « F » (HDE) ; « U » et « N » étant en majuscules, ce n'est vraisemblablement pas un effet de l'API (à confirmer avec search=openfda.device_class:"f").
+La classe 2 représente 74 % des lignes.

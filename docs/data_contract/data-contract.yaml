@@ -179,11 +179,27 @@ schema:
         required: false
         unique: false
         description: >
-          Classe de risque du dispositif (et non du rappel) : 1, 2, 3, U (Unclassified), N (Not classified), F (HDE).
+          Classe de risque du dispositif (et non du rappel) : 1, 2, 3, U (Unclassified), N (Not classified), f (HDE).
           Issu de l'objet imbriqué openfda (openfda.device_class).
-          Chaîne et non nombre : les valeurs U, N et F ne sont pas numériques.
+          Chaîne et non nombre : les valeurs U, N et f ne sont pas numériques.
           La classe du rappel (Class I, II, III) se trouve dans un autre endpoint (device/enforcement), hors périmètre V1.
-        # Valeurs documentées dans fields.pdf ; à confirmer par mesure (count=openfda.device_class) avant d'en faire un enum
+        # Valeurs relevées dans le test #24 : les 6 valeurs couvrent 100 % des lignes renseignées
+        # (58 372 lignes + 1 287 sans valeur, test #23 = 59 659)
+        # « f » en minuscule, documenté « F » dans fields.pdf : valeur brute conservée, « F » volontairement absent de l'enum
+        # Règle de qualité à prévoir (invalidValues) : une nouvelle valeur (dont « F ») doit être signalée
+        enum:
+          - value: "1"
+            description: Classe I, risque faible à modéré (contrôles généraux).
+          - value: "2"
+            description: Classe II, risque modéré à élevé (contrôles généraux et spéciaux).
+          - value: "3"
+            description: Classe III, risque élevé (contrôles généraux et autorisation de mise sur le marché, PMA).
+          - value: "U"
+            description: Non classé (Unclassified).
+          - value: "N"
+            description: Pas de classification (Not classified).
+          - value: "f"
+            description: HDE (Humanitarian Device Exemption). Documenté « F » dans fields.pdf, observé en minuscule (test 24).
         examples: ["2", "3"]
 
       - name: raw_record
