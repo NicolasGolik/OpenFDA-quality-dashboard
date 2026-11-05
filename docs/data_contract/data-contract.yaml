@@ -1,0 +1,28 @@
+# Quel est le sujet du contrat
+apiVersion: v3.2.0 # Standard version
+kind: DataContract
+id: 53581432-6c55-4ba2-a65f-72344a91553a
+name: device_recalls
+version: 0.1.0
+status: draft
+domain: quality
+tenant: NicolasGolik
+description:
+  # Que contient ce jeu de données et pourquoi il existe?
+  purpose: >
+    Rappels de dispositifs médicaux issus d'openFDA device/recall, 
+    conservés bruts et normalisés, 
+    validés selon ce contrat, 
+    pour l'analyse qualité (tendances, causes, cartes de contrôle).
+
+  # Comment dois-je m'en servir correctement?
+  usage: Tendances comptées par événement (res_event_number), répartitions par produit ; voir la décision 0002.
+
+  # Que ne dois-je pas faire, sur quoi ne pas compter?
+  limitations: |
+    - Données non validées par openFDA (avertissement présent dans chaque réponse de l'API).
+    - product_quantity non exploité : texte libre hétérogène, totaux d'événement recopiés sur chaque produit (openfda-notes.md, test 8).
+    - event_date_initiated contient des dates aberrantes (ex. 0010-08-17), signalées par les règles de qualité.
+    - Les semaines les plus récentes peuvent être incomplètes.
+
+tags: ["quality"]
