@@ -97,6 +97,19 @@ schema:
 
       - name: event_date_terminated
         logicalType: date
+        # Absente pour 15 020 lignes (test #13), dont 14 531 « Open, Classified » et 442 « Completed » : normal, rappel non clôturé (tests #15, #16)
+        # Anomalie : 47 rappels « Terminated » sans date de clôture (test #14) -> quarantaine (décision 0003)
+        # required ne peut pas exprimer « obligatoire si recall_status = Terminated » : règle conditionnelle à écrire dans quality
+        # Règle liée à écrire dans quality : event_date_terminated >= event_date_initiated
+        required: false
+        unique: false
+        description: >
+          Date à laquelle la FDA a jugé les actions de rappel terminées et a clôturé le rappel (21 CFR 7.55, cité dans fields.pdf).
+          Présente uniquement pour les rappels au statut « Terminated ».
+          Utilisée pour le délai de clôture (question métier Q3, docs/questions-metier.md).
+          Rappels « Terminated » sans date de clôture : mis en quarantaine (docs/decisions/0003-rappels-termines-sans-date-de-cloture.md).
+
+        examples: ["2011-07-21", "2013-11-04"]
 
       - name: root_cause_description
         logicalType: string
