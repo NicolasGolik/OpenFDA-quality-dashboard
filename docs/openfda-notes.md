@@ -254,3 +254,21 @@ Requête : https://api.fda.gov/device/recall.json?search=_missing_:firm_fei_numb
 Résultat : "total": 98
 Conclusion : firm_fei_number n'est pas toujours présent sur les données actuelles
 Taux d'absence : 98/59659=0,16%
+
+### Test 22 : Mesure de la présence de openfda.medical_specialty_description
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:openfda.medical_specialty_description
+Résultat : "total": 1287
+Conclusion : openfda.medical_specialty_description n'est pas toujours présente sur les données actuelles
+Taux d'absence : 1287/59659=2,16%
+
+### Test 23 : Mesure de la présence de openfda.device_class
+
+Date : 5 novembre 2026
+Requête : https://api.fda.gov/device/recall.json?search=_missing_:openfda.device_class
+Résultat : "total": 1287
+Conclusion : openfda.device_class n'est pas toujours présente sur les données actuelles
+Taux d'absence : 1287/59659=2,16%
+
+Observation (tests 22 et 23) : les deux champs manquent exactement sur le même nombre de lignes (1 287). Hypothèse : c'est tout l'objet openfda qui est absent sur ces lignes (non vérifiée). Contrairement à fields.pdf, la spécialité ne semble pas manquer spécifiquement pour les dispositifs de classe 3.

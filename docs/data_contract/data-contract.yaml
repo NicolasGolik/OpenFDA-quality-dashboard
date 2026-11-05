@@ -158,20 +158,24 @@ schema:
 
       - name: medical_specialty_description
         logicalType: string
-        # À mesurer : _missing_:openfda.medical_specialty_description
+        # Absente sur 1 287 lignes, 2,16 % (test #22) : avertissement, lignes gardées mais exclues des analyses par domaine
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
         required: false
         unique: false
         description: >
           Spécialité médicale déduite de la réglementation (ex. 21 CFR Part 888 : dispositifs orthopédiques).
           Issu de l'objet imbriqué openfda (openfda.medical_specialty_description).
-          Absent par construction pour les dispositifs de classe 3 (selon fields.pdf).
+          fields.pdf indique qu'elle manque pour les dispositifs de classe 3, mais ce n'est pas observé :
+          elle manque exactement sur autant de lignes que device_class (1 287, tests 22 et 23),
+          ce qui suggère l'absence de tout l'objet openfda sur ces lignes (hypothèse non vérifiée).
           Utilisé pour les répartitions par domaine (Q5).
         # À compléter : deux valeurs observées dans une réponse de l'API
         examples: []
 
       - name: device_class
         logicalType: string
-        # À mesurer : _missing_:openfda.device_class
+        # Absente sur 1 287 lignes, 2,16 % (test #23) : avertissement, lignes gardées mais exclues des analyses par classe de dispositif
+        # Règle de qualité à écrire dans quality : nullValues, sévérité avertissement
         required: false
         unique: false
         description: >
