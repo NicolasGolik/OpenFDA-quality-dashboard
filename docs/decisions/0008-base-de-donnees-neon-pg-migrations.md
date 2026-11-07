@@ -28,7 +28,19 @@ Les enregistrements openFDA sont validés avec **Zod** dans le worker, avant ins
 
 ### 4. Configuration : un `.env` par application
 
-Un `.env` dans `apps/worker` et un dans `apps/api` (non commités), chacun accompagné d'un `.env.example`. Le worker écrit, l'API ne fait que lire : leurs accès pourront différer (connexion directe ou poolée, utilisateur en lecture seule pour l'API).
+Un `.env` dans `apps/worker` et un dans `apps/api` (non commités), chacun accompagné d'un `.env.example`. Le worker écrit, l'API ne fait que lire : leurs accès pourront différer (utilisateur en lecture seule pour l'API).
+
+Les fichiers sont chargés par Node lui-même (`--env-file` en dev, `--env-file-if-exists` au démarrage, car en production les variables sont fournies par l'hébergeur), sans dépendance `dotenv`.
+
+Neon propose deux types de connexion : **directe**, et **poolée** (adresse en `-pooler`, via PgBouncer en mode transaction : une connexion réelle est partagée entre plusieurs clients, et l'état de session n'est pas garanti d'une transaction à l'autre).
+
+| Usage                    | Connexion | Raison                                                                                          |
+| ------------------------ | --------- | ----------------------------------------------------------------------------------------------- |
+| Migrations (`db/.env`)   | Directe   | Modifications du schéma ; ne doivent pas dépendre des limites du mode transaction                |
+| Worker                   | Directe   | Un seul processus, peu de connexions, transactions potentiellement longues (upsert en masse)     |
+| API                      | Poolée    | Nombreuses requêtes courtes en lecture ; indispensable en cas de déploiement serverless          |
+
+À l'échelle du projet, les deux types fonctionneraient probablement partout : la répartition suit l'usage prévu de chaque connexion.
 
 ### 5. Migrations : dbmate, dans `db/` à la racine
 
