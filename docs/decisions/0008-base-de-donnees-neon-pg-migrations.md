@@ -18,6 +18,8 @@ Le worker et l'API ont besoin d'une base PostgreSQL commune :
 
 PostgreSQL hébergé sur **Neon** (offre gratuite) dès la V1, pour le développement comme pour le déploiement.
 
+Version du serveur : **PostgreSQL 18.6** (relevée le 2026-11-07 avec `SELECT version()` depuis le worker). `pg_dump`, utilisé par dbmate pour générer `db/schema.sql`, doit être de la même version majeure ou plus récent (installé : 18.4, via Homebrew `libpq`).
+
 ### 2. Accès : `pg` et SQL écrit à la main
 
 **`pg`** (node-postgres) et **SQL écrit à la main**, en requêtes paramétrées (`$1`, `$2`…), sans ORM ni query builder.
