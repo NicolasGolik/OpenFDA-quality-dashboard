@@ -4,6 +4,12 @@
   "directories": {
     "doc": "docs"
   },
+  "scripts": {
+    "db:new": "dbmate --env-file db/.env new",
+    "db:migrate": "dbmate --env-file db/.env migrate",
+    "db:status": "dbmate --env-file db/.env status",
+    "db:rollback": "dbmate --env-file db/.env rollback"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NicolasGolik/OpenFDA-quality-dashboard.git"
@@ -22,6 +28,7 @@
   ],
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "dbmate": "^2.37.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"
   }
